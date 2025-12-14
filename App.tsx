@@ -3,8 +3,10 @@ import { Shield, ArrowRight, Loader2, CheckCircle, AlertTriangle } from 'lucide-
 import { BusinessContextForm } from './components/BusinessContextForm';
 import { QuestionnaireForm } from './components/QuestionnaireForm';
 import { ReportDashboard } from './components/ReportDashboard';
+import { LanguageSelector } from './components/LanguageSelector';
 import { generateReport } from './services/geminiService';
 import { BusinessContext, QuestionnaireAnswers, ShieldCheckReport } from './types';
+import { useLanguage, LanguageProvider } from './i18n.tsx';
 
 enum AppStep {
   WELCOME,
@@ -14,7 +16,8 @@ enum AppStep {
   REPORT
 }
 
-export default function App() {
+function AppContent() {
+  const { t } = useLanguage();
   const [step, setStep] = useState<AppStep>(AppStep.WELCOME);
   const [businessContext, setBusinessContext] = useState<BusinessContext | null>(null);
   const [answers, setAnswers] = useState<QuestionnaireAnswers | null>(null);
@@ -32,13 +35,13 @@ export default function App() {
     setError(null);
 
     try {
-      if (!businessContext) throw new Error("Missing business context");
+      if (!businessContext) throw new Error(t.errors.missingContext);
       const generatedReport = await generateReport(businessContext, data);
       setReport(generatedReport);
       setStep(AppStep.REPORT);
     } catch (err) {
       console.error(err);
-      setError("Failed to generate report. Please verify your API key and try again.");
+      setError(t.errors.generateFailed);
       setStep(AppStep.QUESTIONS); // Go back to allow retry
     }
   };
@@ -60,14 +63,17 @@ export default function App() {
             <div className="bg-indigo-600 p-1.5 rounded-lg">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="font-bold text-xl tracking-tight text-slate-900">ShieldCheck</span>
+            <span className="font-bold text-xl tracking-tight text-slate-900">{t.header.title}</span>
           </div>
-          <div className="text-sm font-medium text-slate-500 hidden sm:block">
-            {step === AppStep.WELCOME && "Cybersecurity Hygiene Assessment"}
-            {step === AppStep.CONTEXT && "Step 1: Context"}
-            {step === AppStep.QUESTIONS && "Step 2: Controls"}
-            {step === AppStep.ANALYZING && "Processing..."}
-            {step === AppStep.REPORT && "Final Report"}
+          <div className="flex items-center gap-4">
+            <div className="text-sm font-medium text-slate-500 hidden sm:block">
+              {step === AppStep.WELCOME && t.header.subtitle}
+              {step === AppStep.CONTEXT && t.header.step1}
+              {step === AppStep.QUESTIONS && t.header.step2}
+              {step === AppStep.ANALYZING && t.header.processing}
+              {step === AppStep.REPORT && t.header.finalReport}
+            </div>
+            <LanguageSelector />
           </div>
         </div>
       </header>
@@ -89,19 +95,17 @@ export default function App() {
                 <Shield className="w-16 h-16 text-indigo-600" />
               </div>
               <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-                Secure Your Business in <span className="text-indigo-600">Minutes</span>
+                {t.welcome.headline} <span className="text-indigo-600">{t.welcome.headlineHighlight}</span>
               </h1>
               <p className="text-lg text-slate-600 leading-relaxed">
-                ShieldCheck is an AI-powered assessment tool designed for small businesses. 
-                Answer 10 simple questions to get a personalized risk score, 
-                prioritized fix list, and measurable ROI metrics.
+                {t.welcome.description}
               </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full text-left">
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full text-start">
                 {[
-                  { title: "No Tech Jargon", desc: "Simple yes/no questions." },
-                  { title: "Instant Report", desc: "Actionable JSON output." },
-                  { title: "Privacy First", desc: "No secrets or keys required." }
+                  { title: t.welcome.feature1Title, desc: t.welcome.feature1Desc },
+                  { title: t.welcome.feature2Title, desc: t.welcome.feature2Desc },
+                  { title: t.welcome.feature3Title, desc: t.welcome.feature3Desc }
                 ].map((item, i) => (
                   <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                     <CheckCircle className="w-5 h-5 text-green-500 mb-2" />
@@ -111,12 +115,12 @@ export default function App() {
                 ))}
               </div>
 
-              <button 
+              <button
                 onClick={() => setStep(AppStep.CONTEXT)}
                 className="mt-8 group relative inline-flex items-center justify-center px-8 py-3.5 text-lg font-semibold text-white transition-all duration-200 bg-indigo-600 rounded-lg hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
               >
-                Start Assessment
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                {t.welcome.startButton}
+                <ArrowRight className="w-5 h-5 ms-2 group-hover:translate-x-1 transition-transform rtl:rotate-180 rtl:group-hover:-translate-x-1" />
               </button>
             </div>
           )}
@@ -132,9 +136,9 @@ export default function App() {
           {step === AppStep.ANALYZING && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mb-6" />
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Analyzing Security Posture</h2>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">{t.analyzing.title}</h2>
               <p className="text-slate-600 max-w-md">
-                Our AI is evaluating your answers against the ShieldCheck scoring model to generate your personalized action plan...
+                {t.analyzing.description}
               </p>
             </div>
           )}
@@ -148,9 +152,17 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 mt-auto">
         <div className="max-w-5xl mx-auto px-4 text-center text-sm text-slate-400">
-          ShieldCheck AI Assessment • v1.0 • Built with Gemini API
+          {t.footer.text}
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }
